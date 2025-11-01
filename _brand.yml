@@ -1,0 +1,34 @@
+meta:
+  name:
+  link:
+    home: https://kyleGrealis.com
+
+logo:
+  large: logos/teek.png
+#   medium:
+#   small:
+
+color: 
+  palette:
+    green: "#005030"
+    orange: "#f47321"
+    gray: "#f9f9f9"
+
+typography: 
+  fonts:
+    - family: Century Schoolbook
+      source: bunny
+    - family: Fira Code
+      source: bunny
+    - family: Frutiger
+      source: bunny
+  
+  base: Century Schoolbook
+  headings:
+    color: green
+  monospace: Fira Code
+  monospace-inline: 
+    color: green
+    background-color: gray
+  link: 
+    color: green
