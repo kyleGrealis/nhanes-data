@@ -1,0 +1,109 @@
+---
+title: "Introduction to nhanesdata"
+format: html
+editor: visual
+vignette: >
+  %\VignetteIndexEntry{Introduction to nhanesdata}
+  %\VignetteEngine{quarto::quarto_ βρίσκεται}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette provides an overview of the `nhanesdata` package, demonstrating how to search for NHANES variables and download complete datasets.
+
+## Setup
+
+First, load the `nhanesdata` package to get access to all its functions.
+
+```{r}
+#| label: setup
+#| message: false
+
+library(nhanesdata)
+library(dplyr)
+```
+
+## Searching for Data
+
+The package includes several helper functions to find specific NHANES data.
+
+*   `term_search()`: Search for a term across variable names and descriptions.
+*   `var_search()`: Find the datasets a specific variable belongs to.
+*   `get_url()`: Get a direct link to the CDC's documentation for a data table.
+
+For example, let's find data related to "caffeine":
+
+```{r}
+#| label: search-example
+#| eval: false
+
+term_search("caffeine")
+```
+
+## Reading Data from the Public Archive
+
+The easiest way to get NHANES data is to read it from the pre-processed public archive. The `read_r2()` function downloads a specified dataset in `.parquet` format.
+
+Here is how you can download the triglycerides dataset:
+
+```{r}
+#| label: read-r2-example
+#| eval: false
+
+trigly <- read_r2('trigly')
+head(trigly)
+```
+
+## Pulling and Processing Raw Data
+
+If you need to pull data directly from the NHANES servers, you can use the `pull_nhanes()` function. This function iterates through all available survey cycles for a given data table, combines them, and harmonizes data types.
+
+**Note:** Running `pull_nhanes()` can be time-consuming as it downloads multiple files. The `save` argument is set to `TRUE` by default, which will save `.rda` and `.parquet` files to a `data/raw` directory.
+
+The code chunk below demonstrates how you would call the function, but is not evaluated here.
+
+```{r}
+#| label: pull-nhanes-example
+#| eval: false
+
+# This demonstrates how to pull the demographics data.
+# The 'save' argument is TRUE by default.
+demo <- pull_nhanes('demo')
+
+# The original script contained calls to pull dozens of datasets.
+# These have been commented out to prevent long execution times when
+# building this vignette. You can run them individually as needed.
+
+#
+# # acculturation
+# acq <- pull_nhanes('acq')
+#
+# # allergies
+# agq <- pull_nhanes('agq')
+#
+# # alcohol
+# alq <- pull_nhanes('alq')
+#
+# # ... and so on for all other datasets.
+```
+
+## Storing Data in Your Own R2 Bucket
+
+For users who want to maintain their own collection of NHANES data, the package includes `nhanes_pin_write()`. This function uploads a data frame to a Cloudflare R2 bucket.
+
+**Important:** This requires you to have your `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` set as environment variables.
+
+```{r}
+#| label: pin-write-example
+#| eval: false
+
+# First, pull a dataset
+demo_data <- pull_nhanes('demo', save = FALSE)
+
+# Then, write it to your R2 bucket
+nhanes_pin_write(
+  x = demo_data,
+  name = "nhanes-demo-dataset",
+  bucket = "my-nhanes-data-bucket",
+  description = "Demographics data from all available cycles."
+)
+```

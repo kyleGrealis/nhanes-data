@@ -297,7 +297,7 @@ inq <- pull_nhanes('inq')  # 71775
 # 1999
 kiq <- pull_nhanes('kiq')  # 4880
 # 2001+
-kiqu <- pull_nhanes('kiq_u')  # 58010
+kiq_u <- pull_nhanes('kiq_u')  # 58010
 
 # prostate conditions
 kiq_p <- pull_nhanes('kiq_p')  # 12652
@@ -400,7 +400,7 @@ cbc <- pull_nhanes('cbc')  # 73218
 # bodyscan
 dxx <- pull_nhanes('dxx')  # 57084
 
-# Example if you'd like to randomly samply one observation.
+# Example if you\'d like to randomly samply one observation.
 # This will only affect 2005 since that is the only cycle with 
 # repeated or imputed measures. Every other cycle is unaffected.
 # CHOOSE WISELY!

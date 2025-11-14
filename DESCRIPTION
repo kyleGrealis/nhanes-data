@@ -1,0 +1,35 @@
+Package: nhanesdata
+Title: An R Package to Access and Manage NHANES Data
+Version: 0.0.0.9000
+Authors@R: 
+    person("Kyle", "Grealis",
+           email = "kyle@kylegrealis.com",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-3550-9749"))
+Description: A set of tools to download, process, and store data from the
+    National Health and Nutrition Examination Survey (NHANES). It provides
+    wrapper functions to the 'nhanesA' package to download data across
+    multiple survey cycles and helper functions to read data from a public
+    data store.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    nhanesA,
+    dplyr,
+    stringr,
+    janitor,
+    arrow,
+    fs,
+    scales,
+    pins,
+    rlang,
+    tidyselect,
+    cli
+Suggests:
+    testthat (>= 3.0.0),
+    roxygen2,
+    devtools,
+    httptest2
+Config/testthat/edition: 3

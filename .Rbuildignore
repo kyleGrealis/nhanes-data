@@ -1,0 +1,12 @@
+^.git$
+^.quarto$
+^data$
+^nhanes-data.qmd$
+^gather_nhanes_data.qmd$
+^pins_2.R$
+^_brand.yml$
+^_variables.yml$
+^README.md$
+^.Rproj$
+^LICENSE.md$
+^inst$
