@@ -1,43 +1,115 @@
-# NHANES Data Collection & Processing
+# nhanesdata
 
-A data pipeline for downloading, harmonizing, and storing data from the National Health and Nutrition Examination Survey (NHANES) across multiple survey cycles (1999-2021).
+[![Update NHANES Data](https://github.com/kyleGrealis/nhanesdata/actions/workflows/update-nhanes-data.yml/badge.svg)](https://github.com/kyleGrealis/nhanesdata/actions/workflows/update-nhanes-data.yml)
 
-## What This Project Does
+An R package for accessing NHANES (National Health and Nutrition Examination Survey) data with automated quarterly updates from CDC servers.
 
-This project systematically downloads NHANES data from CDC servers, harmonizes variables across survey cycles, handles type mismatches between cycles, and stores the cleaned data in both `.rda` and `.parquet` formats. The processed datasets are publicly hosted at `https://nhanes.kylegrealis.com/` for easy retrieval without re-running the entire acquisition pipeline.
+## What This Package Does
 
-**This is NOT an R package.** It's a data processing workflow built around Quarto documents for checkpointing and reproducibility.
+This package provides:
 
-## Why Quarto (.qmd) Files?
+1. **Automated Data Updates**: GitHub Actions workflow pulls fresh NHANES data quarterly from CDC servers
+2. **Public Data Access**: Pre-processed datasets hosted on Cloudflare R2 for fast, reliable downloads
+3. **Data Harmonization**: Seamlessly combines survey cycles (1999-2021) with automatic type reconciliation
+4. **Dual Storage Formats**: Saves data as both `.rda` (R native) and `.parquet` (cross-platform)
+5. **Change Detection**: MD5 checksums ensure only updated datasets are uploaded to cloud storage
 
-The CDC's NHANES servers are unreliable. They go down. Connections timeout. Downloads fail halfway through.
+All processed datasets are publicly available at `https://nhanes.kylegrealis.com/` with no authentication required.
 
-Quarto documents provide crucial **checkpointing capabilities** during data acquisition:
-- **Chunk-by-chunk execution**: Download one table, save it, move to the next
-- **Session persistence**: Keep downloaded data in memory between chunks when servers are unstable
-- **Logging**: Track which tables succeeded/failed during acquisition runs
-- **Selective re-execution**: Re-run only failed chunks without restarting from scratch
+## Installation
 
-The `.qmd` format isn't academic posturing—it saves hours of re-downloading when government infrastructure decides to shit the bed mid-process.
+Install from GitHub:
 
-## Project Structure
+```r
+# install.packages("remotes")
+remotes::install_github("kyleGrealis/nhanesdata")
+```
+
+## Quick Start
+
+```r
+library(nhanesdata)
+
+# Load pre-processed datasets from public R2 storage
+demo <- read_r2('demo')        # Demographics
+bpx <- read_r2('bpx')          # Blood pressure
+trigly <- read_r2('trigly')    # Triglycerides
+
+# Or download fresh data directly from CDC servers
+demo_fresh <- pull_nhanes('demo')
+```
+
+## Automated Data Pipeline
+
+This package includes a **fully automated GitHub Actions workflow** that:
+
+1. **Runs quarterly** (Jan 1, Apr 1, Jul 1, Oct 1 at 2 AM UTC)
+2. **Pulls fresh data** from CDC servers for all 66 NHANES datasets
+3. **Detects changes** using MD5 checksums (only uploads modified data)
+4. **Uploads to R2** (Cloudflare object storage) for public access
+5. **Commits checksums** to track data versions over time
+
+### Manual Workflow Triggers
+
+You can also trigger data updates manually:
+
+**Via GitHub UI:**
+1. Go to **Actions** → **Update NHANES Data**
+2. Click **Run workflow**
+3. Optional: Specify datasets (comma-separated) or enable dry-run mode
+
+**Via GitHub CLI:**
+```bash
+# Update all datasets
+gh workflow run update-nhanes-data.yml
+
+# Update specific datasets only
+gh workflow run update-nhanes-data.yml -f datasets="demo,bpx,trigly"
+
+# Dry run (skip R2 upload)
+gh workflow run update-nhanes-data.yml -f dry_run=true
+```
+
+### Available Datasets
+
+The automation processes **66 NHANES datasets** across two categories:
+
+**Questionnaire/Interview Tables (50):**
+- `demo` - Demographics
+- `bpq` - Blood Pressure & Cholesterol Questionnaire
+- `diq` - Diabetes
+- `smq` - Smoking
+- `alq` - Alcohol
+- ... and 45 more (see `inst/extdata/datasets.yml` for full list)
+
+**Examination Tables (16):**
+- `bmx` - Body Measures
+- `bpx` - Blood Pressure (Examination)
+- `cbc` - Blood Counts
+- `trigly` - Triglycerides
+- ... and 12 more
+
+## Package Structure
 
 ```
-nhanes-data/
-├── R/                           # Utility functions and setup
-│   ├── _libraries.R            # Package loading and setup
-│   └── custom_functions.R      # Data acquisition and processing functions
-├── data/
-│   └── raw/
-│       ├── R/                  # Downloaded data as .rda files
-│       └── parquet/            # Downloaded data as .parquet files
-├── gather_nhanes_data.qmd      # Main data acquisition script (executed chunk-by-chunk)
-├── nhanes-data.qmd             # Project entry point
-├── nhanes-pins.R               # Testing script for R2/Cloudflare storage
-├── pins_2.R                    # Additional storage configuration examples
-├── _quarto.yml                 # Quarto project configuration
-├── _brand.yml                  # Styling configuration
-└── _variables.yml              # Author/metadata variables
+nhanesdata/
+├── R/                              # Package functions
+│   ├── data.R                      # CDC data fetching & change detection
+│   ├── pins.R                      # Cloudflare R2 integration
+│   └── custom_functions.R          # Helper utilities
+├── inst/
+│   ├── extdata/
+│   │   ├── datasets.yml            # Dataset configuration (66 datasets)
+│   │   └── original_data_pull_script.qmd  # Legacy reference
+│   └── scripts/
+│       └── workflow_update.R       # Workflow orchestration script
+├── .github/workflows/
+│   └── update-nhanes-data.yml      # Automated data update workflow
+├── man/                            # Documentation
+├── tests/testthat/                 # Unit tests
+├── vignettes/                      # User guides
+├── .checksums.json                 # MD5 hashes for change detection
+└── SECURITY.md                     # R2 setup & security guide
 ```
 
 ## Key Functions
@@ -112,88 +184,269 @@ install.packages(c(
 ))
 ```
 
-## Setup
+## Understanding NHANES Dataset Names
 
-1. **Clone this repository**
-   ```bash
-   git clone <your-repo-url>
-   cd nhanes-data
-   ```
+This is **critical** to understand before using the package:
 
-2. **Install R dependencies** (see above)
+### How CDC Names Datasets
 
-3. **(Optional) Configure Cloudflare R2 for data storage**
-   If you want to push processed data to your own R2 bucket, set these environment variables:
-   ```r
-   Sys.setenv(R2_ACCOUNT_ID = "your_account_id")
-   Sys.setenv(R2_ACCESS_KEY_ID = "your_access_key")
-   Sys.setenv(R2_SECRET_ACCESS_KEY = "your_secret_key")
-   ```
-   See `pins_2.R` for an example configuration using the `pins` package.
+The CDC releases NHANES data in 2-year cycles, with each cycle getting a **letter suffix**:
 
-## Usage
+| CDC Table Name | Survey Cycle | Years |
+|----------------|--------------|-------|
+| `DEMO` | 1999-2000 | No suffix (first cycle) |
+| `DEMO_B` | 2001-2002 | B |
+| `DEMO_C` | 2003-2004 | C |
+| `DEMO_D` | 2005-2006 | D |
+| ... | ... | ... |
+| `DEMO_J` | 2017-2018 | J |
+| `DEMO_L` | 2021-2022 | L (skips K) |
 
-### Option 1: Use Pre-Processed Data (Recommended)
+This pattern applies to **all 66 datasets**: `BPX`, `BPX_B`, `BPX_C`, ..., `BPX_L` for blood pressure examination data, and so on.
 
-Load data directly from public storage without re-downloading:
+### How This Package Names Datasets
+
+We **combine all cycles** and store them by **base name only** (no suffixes):
+
+- CDC has: `DEMO`, `DEMO_B`, `DEMO_C`, ..., `DEMO_L` (11 separate files)
+- We store: `demo` (1 merged file with all cycles)
+- A `year` column automatically tracks which cycle each row came from
+
+This means:
 
 ```r
-source('R/_libraries.R')
-source('R/custom_functions.R')
-
-# Load pre-processed datasets
+# You call this:
 demo <- read_r2('demo')
-bpx <- read_r2('bpx')
-trigly <- read_r2('trigly')
+
+# You get: All 11 cycles merged together
+# - 1999-2000 data (from DEMO)
+# - 2001-2002 data (from DEMO_B)
+# - 2003-2004 data (from DEMO_C)
+# - ... through 2021-2022 (from DEMO_L)
+# - Each row has a 'year' column showing its cycle
 ```
 
-### Option 2: Download Data from CDC Servers
+### Why This Matters
 
-Open `gather_nhanes_data.qmd` in RStudio and execute chunks sequentially.
+When searching CDC documentation, you'll see table names with suffixes (e.g., `DEMO_J` for 2017-2018 demographics). But when using this package, you use the **base name** (`demo`) and get **all cycles automatically merged**.
 
-**Important**:
-- Execute one chunk at a time, especially when downloading large tables
-- If a download fails, wait for CDC servers to come back online
-- Re-run failed chunks without restarting the entire process
-- Check `data/raw/parquet/` to see which tables have already been saved
+This design:
+- Simplifies data access (one name instead of tracking 11 suffix codes)
+- Enables longitudinal analysis (all years in one dataset)
+- Handles type mismatches between cycles automatically
+- Adds temporal context via the `year` column
 
-Example workflow in the `.qmd` file:
+## Usage Examples
+
+### Load Multiple Datasets with Tidyverse Style
+
+The recommended approach uses `purrr::map()` for clean, functional workflows:
+
 ```r
-# Load libraries and functions
-source('R/_libraries.R')
+library(nhanesdata)
+library(tidyverse)
 
-# Download individual tables
-demo <- pull_nhanes('demo')
-bpx <- pull_nhanes('bpx')
-alq <- pull_nhanes('alq')
+# Load multiple datasets at once
+datasets <- c('demo', 'bpx', 'bmx', 'trigly') |>
+  purrr::map(read_r2) |>
+  purrr::set_names(c('demo', 'bpx', 'bmx', 'trigly'))
+
+# Access individual datasets
+demographics <- datasets$demo
+blood_pressure <- datasets$bpx
+body_measures <- datasets$bmx
+```
+
+### Basic Single Dataset Loading
+
+```r
+library(nhanesdata)
+
+# Load demographics from public R2 storage
+demo <- read_r2('demo')
+
+# Check the year distribution
+demo |>
+  dplyr::count(year) |>
+  dplyr::arrange(year)
+```
+
+### Joining Datasets Across Survey Components
+
+```r
+library(nhanesdata)
+library(tidyverse)
+
+# Load related datasets
+c('demo', 'bpx', 'bmx') |>
+  purrr::map(read_r2) |>
+  purrr::set_names(c('demo', 'bpx', 'bmx')) |>
+  list2env(envir = .GlobalEnv)
+
+# Join by participant ID (seqn) and year
+analysis_data <- demo |>
+  dplyr::inner_join(bpx, by = c('seqn', 'year')) |>
+  dplyr::inner_join(bmx, by = c('seqn', 'year')) |>
+  dplyr::select(year, seqn, ridageyr, riagendr, bpxsy1, bmxbmi)
+```
+
+### Download Fresh Data from CDC Servers
+
+If you need to pull data directly from CDC (instead of using pre-processed R2 files):
+
+```r
+library(nhanesdata)
+
+# Pull fresh demographics data from CDC
+# This merges all cycles automatically
+demo_fresh <- pull_nhanes('demo')
+
+# Pull only specific variables (faster download)
+demo_subset <- pull_nhanes(
+  'demo',
+  selected_variables = c('SEQN', 'RIDAGEYR', 'RIAGENDR', 'RIDRETH3')
+)
+```
+
+### Working with Survey Years
+
+Since the `year` column tracks survey cycles, you can filter and analyze by time period:
+
+```r
+library(nhanesdata)
+library(tidyverse)
+
+demo <- read_r2('demo')
+
+# Filter to recent cycles only
+recent_data <- demo |>
+  dplyr::filter(year >= 2015)
+
+# Compare across time periods
+demo |>
+  dplyr::mutate(
+    period = dplyr::case_when(
+      year < 2010 ~ '1999-2009',
+      year < 2020 ~ '2010-2019',
+      TRUE ~ '2020+'
+    )
+  ) |>
+  dplyr::group_by(period) |>
+  dplyr::summarise(n_participants = dplyr::n())
+```
+
+### Using Helper Functions
+
+```r
+library(nhanesdata)
+
+# Find the CDC codebook for a dataset
+get_url('DEMO_J')  # Get docs for 2017-2018 demographics
+
+# Search for variables by term
+term_search('diabetes')
+
+# Search by exact variable name
+var_search('LBXTC')  # Total cholesterol
+
+# Find which loaded datasets contain a variable
+# (after loading multiple datasets into your environment)
+find_variable('bpxsy1')  # Systolic blood pressure
 ```
 
 ## Data Storage Formats
 
-- **`.rda`**: Native R format, preserves object names, smaller file size
-- **`.parquet`**: Cross-platform, works with Python/Julia/etc., faster I/O, columnar storage
+Both formats are saved automatically during the automated pipeline:
 
-Both formats are saved automatically. Use `.parquet` for interoperability or when working with large datasets.
+- **`.parquet`** (default): Cross-platform, faster I/O, columnar storage, works with Python/Julia/Arrow
+- **`.rda`**: Native R format, preserves object names, slightly smaller file size
 
-## Notes on NHANES Data
+The `read_r2()` function defaults to `.parquet` for better performance and interoperability.
 
-- **Survey cycles**: NHANES data is released in 2-year cycles (1999-2000, 2001-2002, etc.)
-- **2019-2020 cycle**: Was interrupted by COVID-19 and not released
-- **Variable naming**: Table names have cycle suffixes (e.g., `DEMO_B` = 2001-2002 demographics)
-- **Type mismatches**: Older cycles sometimes use different variable types (factor vs. character). The `pull_nhanes()` function handles this automatically.
-- **`DXX` tables**: Body composition scans with repeated measures in 2005 cycle—do NOT blindly merge without reading the documentation
+## Notes on NHANES Data Quality
+
+### Survey Cycle Details
+
+- **2-year cycles**: Data released biannually (1999-2000, 2001-2002, etc.)
+- **2019-2020 cycle**: Interrupted by COVID-19 pandemic and not released
+- **Suffix pattern**: Letters B through L, skipping K (so J → L between 2017-2018 and 2021-2022)
+
+### Type Harmonization
+
+Older cycles sometimes use different variable types (e.g., factor vs. character, integer vs. double). The `pull_nhanes()` function detects and resolves these conflicts automatically:
+
+```r
+# This handles type mismatches transparently
+demo <- pull_nhanes('demo')
+# Type mismatch in riagendr: integer vs double... converting types now...
+# Type mismatch in ridreth1: factor vs character... converting types now...
+```
+
+### Special Cases
+
+**DXX Tables (Body Composition)**: The 2005-2006 cycle contains repeated measures that shouldn't be merged blindly with other cycles. Read the CDC documentation carefully before using these datasets.
 
 ## Public Data Access
 
-Pre-processed datasets are publicly available at:
+All pre-processed datasets are hosted publicly at:
+
 ```
 https://nhanes.kylegrealis.com/{dataset_name}.parquet
 ```
 
-Example:
+You can access them directly without the package:
+
 ```r
-arrow::read_parquet('https://nhanes.kylegrealis.com/demo.parquet')
+# Direct download (without nhanesdata package)
+library(arrow)
+
+demo <- arrow::read_parquet('https://nhanes.kylegrealis.com/demo.parquet')
+trigly <- arrow::read_parquet('https://nhanes.kylegrealis.com/trigly.parquet')
 ```
+
+This is useful for:
+- Sharing data with collaborators who don't need the full package
+- Accessing data from Python, Julia, or other Arrow-compatible languages
+- Quick data exploration without installing dependencies
+
+## Setup for Package Maintainers
+
+### Local Installation
+
+```r
+# Install from GitHub
+pak::pak("kyleGrealis/nhanesdata")
+
+# Or using remotes
+# remotes::install_github("kyleGrealis/nhanesdata")
+```
+
+### Cloudflare R2 Configuration
+
+To push processed data to your own R2 bucket, configure these environment variables:
+
+```r
+# Set in .Renviron or configure via system environment
+Sys.setenv(
+  R2_ACCOUNT_ID = "your_account_id",
+  R2_ACCESS_KEY_ID = "your_access_key",
+  R2_SECRET_ACCESS_KEY = "your_secret_key"
+)
+```
+
+See `SECURITY.md` for detailed setup instructions and security best practices.
+
+### GitHub Actions Secrets
+
+For automated workflows, add these secrets to your GitHub repository:
+
+1. Go to **Settings** → **Secrets and variables** → **Actions**
+2. Add new repository secrets:
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+
+The workflow at `.github/workflows/update-nhanes-data.yml` will use these automatically.
 
 ## Contributing
 

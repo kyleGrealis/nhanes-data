@@ -45,7 +45,7 @@ labeled_data |> drop_label_kyle(starts_with("dem_"))
 labeled_data |> drop_label_kyle(contains("score"))
 
 # Chain with other data processing steps
-study_data |> 
+study_data |>
   drop_label_kyle(starts_with("baseline_")) |>
   left_join(lookup_table, by = "participant_id")
 }

@@ -1,0 +1,271 @@
+# NHANES Dataset Configuration
+# This file defines all datasets to be automatically pulled and uploaded to R2
+# Last updated from: inst/extdata/original_data_pull_script.qmd
+
+datasets:
+  # Interview / Questionnaire Tables
+  - name: demo
+    description: Demographics
+    category: questionnaire
+
+  - name: acq
+    description: Acculturation
+    category: questionnaire
+
+  - name: agq
+    description: Allergies
+    category: questionnaire
+
+  - name: alq
+    description: Alcohol
+    category: questionnaire
+
+  - name: auq
+    description: Audiometry
+    category: questionnaire
+
+  - name: bpq
+    description: Blood Pressure & Cholesterol Questionnaire
+    category: questionnaire
+
+  - name: cdq
+    description: Cardiovascular Health
+    category: questionnaire
+
+  - name: cfq
+    description: Comorbidity Functioning
+    category: questionnaire
+
+  - name: cbq
+    description: Consumer Behavior
+    category: questionnaire
+
+  - name: ckq
+    description: Creatinine Kinase
+    category: questionnaire
+
+  - name: diq
+    description: Diabetes
+    category: questionnaire
+
+  - name: dr1iff
+    description: Dietary Interview, Individual Food First Day
+    category: questionnaire
+
+  - name: dr2iff
+    description: Dietary Interview, Second Day
+    category: questionnaire
+
+  - name: dr1tot
+    description: Total Nutrient Intake, First Day
+    category: questionnaire
+
+  - name: dr2tot
+    description: Total Nutrient Intake, Second Day
+    category: questionnaire
+
+  - name: duq
+    description: Substance Use
+    category: questionnaire
+
+  - name: deq
+    description: Dermatology
+    category: questionnaire
+
+  - name: dbq
+    description: Diet, Behavior, & Nutrition
+    category: questionnaire
+
+  - name: dlq
+    description: Disability
+    category: questionnaire
+
+  - name: dpq
+    description: Mental Health - Depression Screener
+    category: questionnaire
+
+  - name: ecq
+    description: Early Childhood
+    category: questionnaire
+
+  - name: fsq
+    description: Food Security
+    category: questionnaire
+
+  - name: hiq
+    description: Health Insurance
+    category: questionnaire
+
+  - name: heq
+    description: Hepatitis
+    category: questionnaire
+
+  - name: hsq
+    description: Current Health Status
+    category: questionnaire
+
+  - name: huq
+    description: Hospital Utilization & Access to Care
+    category: questionnaire
+
+  - name: imq
+    description: Immunization
+    category: questionnaire
+
+  - name: inq
+    description: Income
+    category: questionnaire
+
+  - name: kiq
+    description: Kidney Conditions & Urology (1999)
+    category: questionnaire
+
+  - name: kiq_u
+    description: Kidney Conditions & Urology (2001+)
+    category: questionnaire
+
+  - name: kiq_p
+    description: Prostate Conditions
+    category: questionnaire
+
+  - name: mcq
+    description: Cancer Questions
+    category: questionnaire
+
+  - name: ocq
+    description: Occupation
+    category: questionnaire
+
+  - name: ohq
+    description: Oral Health
+    category: questionnaire
+
+  - name: osq
+    description: Osteoporosis
+    category: questionnaire
+
+  - name: puqmec
+    description: Pesticide Use
+    category: questionnaire
+
+  - name: paqiaf
+    description: Physical Activity - Individual Activities
+    category: questionnaire
+
+  - name: pfq
+    description: Physical Functioning
+    category: questionnaire
+
+  - name: rxq_rx
+    description: Prescription Medication - Multiple Rows Per Participant
+    category: questionnaire
+
+  - name: paq
+    description: Physical Activity
+    category: questionnaire
+
+  - name: psq
+    description: PSA Follow-up
+    category: questionnaire
+
+  - name: rdq
+    description: Respiratory Health
+    category: questionnaire
+
+  - name: rhq
+    description: Reproductive Health
+    category: questionnaire
+
+  - name: slq
+    description: Sleep Disorders
+    category: questionnaire
+
+  - name: smq
+    description: Smoking
+    category: questionnaire
+
+  - name: smqfam
+    description: Smoking - Household
+    category: questionnaire
+
+  - name: smqrtu
+    description: Smoking Recent Tobacco Use
+    category: questionnaire
+
+  - name: ssq
+    description: Social Support
+    category: questionnaire
+
+  - name: sxq
+    description: Sexual Behavior
+    category: questionnaire
+
+  - name: viq
+    description: Vision
+    category: questionnaire
+
+  - name: whq
+    description: Weight History
+    category: questionnaire
+
+  - name: whqmec
+    description: Weight History - Youth
+    category: questionnaire
+
+  # Examination Tables
+  - name: alb_cr
+    description: Albumin & Creatinine
+    category: examination
+
+  - name: aux
+    description: Audiometry
+    category: examination
+
+  - name: auxar
+    description: Audiometry - Acoustic Reflex
+    category: examination
+
+  - name: biopro
+    description: More Glucose, etc.
+    category: examination
+
+  - name: bmx
+    description: Body Measures
+    category: examination
+
+  - name: bpx
+    description: Blood Pressure
+    category: examination
+
+  - name: cbc
+    description: Blood Counts
+    category: examination
+
+  - name: dxx
+    description: Bodyscan (NOTE - has repeated measures until 2005+)
+    category: examination
+    notes: See https://wwwn.cdc.gov/nchs/data/nhanes/public/2005/datafiles/dxx_d.htm
+
+  - name: ghb
+    description: Diabetes 2
+    category: examination
+
+  - name: glu
+    description: Glucose
+    category: examination
+
+  - name: hdl
+    description: Cholesterol
+    category: examination
+
+  - name: hiv
+    description: HIV
+    category: examination
+
+  - name: tchol
+    description: Cholesterol 2
+    category: examination
+
+  - name: trigly
+    description: Triglyceride
+    category: examination

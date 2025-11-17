@@ -61,6 +61,70 @@ find_variable <- function(var_name) {
 }
 
 
+#' Drop labels from selected variables in a data frame
+#'
+#' @description Removes variable labels (attributes) from specified columns in a
+#'   data frame. This function addresses reported issues with data joins where
+#'   variable labels can cause conflicts. Supports flexible variable selection
+#'   using tidyselect syntax including helper functions and direct column names.
+#'
+#'   Note: This is an adaptation of functionality being proposed for integration
+#'   into the tidyREDCap package.
+#'
+#' @param df A data frame containing labeled variables
+#' @param ... Variable selection using tidyselect helpers (e.g., `contains()`,
+#'   `starts_with()`) or column names as symbols or strings
+#'
+#' @returns The input data frame with labels (attributes) removed from selected variables
+#'
+#' @details The function uses `tidyselect::eval_select()` to support flexible
+#'   variable selection patterns. It removes all attributes from selected columns,
+#'   which includes variable labels but also other metadata. Use with caution if
+#'   you need to preserve specific attributes other than labels.
+#'
+#' @seealso
+#'   * [tidyselect::eval_select()] for variable selection syntax
+#'   * [attributes()] for information about R object attributes
+#'
+#' @examples
+#' \dontrun{
+#' # Remove labels from a single variable
+#' labeled_data |> drop_label_kyle(employment)
+#'
+#' # Remove labels from multiple specific variables
+#' labeled_data |> drop_label_kyle(employment, marital_status, income)
+#'
+#' # Remove all demographic labels using tidyselect helpers
+#' labeled_data |> drop_label_kyle(starts_with("dem_"))
+#'
+#' # Remove labels from variables containing specific text
+#' labeled_data |> drop_label_kyle(contains("score"))
+#'
+#' # Chain with other data processing steps
+#' study_data |>
+#'   drop_label_kyle(starts_with("baseline_")) |>
+#'   left_join(lookup_table, by = "participant_id")
+#' }
+#'
+#' @importFrom tidyselect eval_select
+#' @importFrom rlang enquos
+#' @export
+drop_label_kyle <- function(df, ...) {
+  # Capture variable selection using tidyselect
+  selected_vars <- tidyselect::eval_select(
+    rlang::expr(c(...)),
+    data = df
+  )
+
+  # Remove attributes from selected columns
+  for (var_name in names(selected_vars)) {
+    attributes(df[[var_name]]) <- NULL
+  }
+
+  return(df)
+}
+
+
 #-------------------------------------------------------
 #' Confirmation check
 #' @importFrom cli col_green col_yellow col_br_magenta

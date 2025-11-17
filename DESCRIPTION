@@ -26,10 +26,18 @@ Imports:
     pins,
     rlang,
     tidyselect,
-    cli
+    cli,
+    jsonlite,
+    yaml,
+    tibble
 Suggests:
     testthat (>= 3.0.0),
     roxygen2,
     devtools,
-    httptest2
+    httptest2,
+    purrr,
+    knitr,
+    rmarkdown,
+    ggplot2,
+    quarto
 Config/testthat/edition: 3

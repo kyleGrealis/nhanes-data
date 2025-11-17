@@ -10,3 +10,8 @@
 ^.Rproj$
 ^LICENSE.md$
 ^inst$
+^IMPLEMENTATION_GUIDE\.md$
+^\.github$
+^\.checksums\.json$
+^PROJECT_STATUS\.md$
+^\.claude$

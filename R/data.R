@@ -198,3 +198,121 @@ read_r2 <- function(dataset, type = 'parquet') {
   message(sprintf('%s complete!', toupper(dataset)))
   return(ds)
 }
+
+#----------------------------------------------------------------------------------------
+#' Detect if dataset has changed by comparing MD5 checksums
+#' @param file_path Character. Path to the parquet file to check
+#' @param dataset_name Character. Name of the dataset (for checksum lookup)
+#' @param checksums_file Character. Path to the checksums JSON file.
+#'   Default is '.checksums.json'
+#' @returns Logical. TRUE if data has changed (or is new), FALSE if unchanged
+#' @importFrom tools md5sum
+#' @export
+detect_data_changes <- function(file_path, dataset_name,
+                                checksums_file = '.checksums.json') {
+
+  if (!file.exists(file_path)) {
+    warning(sprintf('File not found: %s', file_path))
+    return(FALSE)
+  }
+
+  # Calculate MD5 hash of the file
+  new_hash <- tools::md5sum(file_path)
+  names(new_hash) <- NULL  # Remove file path from names
+
+  # Load existing checksums if file exists
+  if (file.exists(checksums_file)) {
+    checksums <- jsonlite::read_json(checksums_file, simplifyVector = TRUE)
+  } else {
+    checksums <- list()
+  }
+
+  # Get stored hash for this dataset
+  stored_hash <- checksums[[dataset_name]]
+
+  # Compare hashes
+  if (is.null(stored_hash)) {
+    message(sprintf('%s: NEW dataset (no previous checksum)', dataset_name))
+    return(TRUE)
+  } else if (new_hash != stored_hash) {
+    message(sprintf('%s: CHANGED (hash mismatch)', dataset_name))
+    return(TRUE)
+  } else {
+    message(sprintf('%s: UNCHANGED (hash match)', dataset_name))
+    return(FALSE)
+  }
+}
+
+#----------------------------------------------------------------------------------------
+#' Update checksums file with new hash for a dataset
+#' @param dataset_name Character. Name of the dataset
+#' @param file_path Character. Path to the parquet file
+#' @param checksums_file Character. Path to the checksums JSON file.
+#'   Default is '.checksums.json'
+#' @returns NULL (writes to file)
+#' @importFrom tools md5sum
+#' @importFrom jsonlite write_json read_json
+#' @export
+update_checksum <- function(dataset_name, file_path,
+                           checksums_file = '.checksums.json') {
+
+  if (!file.exists(file_path)) {
+    stop(sprintf('File not found: %s', file_path))
+  }
+
+  # Calculate MD5 hash
+  new_hash <- tools::md5sum(file_path)
+  names(new_hash) <- NULL
+
+  # Load existing checksums
+  if (file.exists(checksums_file)) {
+    checksums <- jsonlite::read_json(checksums_file, simplifyVector = TRUE)
+  } else {
+    checksums <- list()
+  }
+
+  # Update with new hash
+  checksums[[dataset_name]] <- new_hash
+
+  # Sort alphabetically for clean diffs
+  checksums <- checksums[sort(names(checksums))]
+
+  # Write back to file
+  jsonlite::write_json(
+    checksums,
+    checksums_file,
+    pretty = TRUE,
+    auto_unbox = TRUE
+  )
+
+  message(sprintf('Updated checksum for %s', dataset_name))
+}
+
+#----------------------------------------------------------------------------------------
+#' Load dataset configuration from YAML file
+#' @param config_file Character. Path to the datasets.yml file.
+#'   Default is 'inst/extdata/datasets.yml'
+#' @returns Data frame with dataset configuration
+#' @importFrom yaml read_yaml
+#' @export
+load_dataset_config <- function(config_file = 'inst/extdata/datasets.yml') {
+
+  if (!file.exists(config_file)) {
+    stop(sprintf('Configuration file not found: %s', config_file))
+  }
+
+  config <- yaml::read_yaml(config_file)
+
+  # Convert to data frame
+  datasets_df <- do.call(rbind, lapply(config$datasets, function(x) {
+    data.frame(
+      name = x$name,
+      description = x$description,
+      category = x$category,
+      notes = ifelse(is.null(x$notes), NA_character_, x$notes),
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  return(datasets_df)
+}
