@@ -188,7 +188,9 @@ duration_mins <- difftime(end_time, summary$start_time, units = "mins")
 # Convert to JSON-serializable types
 summary$start_time <- format(summary$start_time, "%Y-%m-%d %H:%M:%S")
 summary$end_time <- format(end_time, "%Y-%m-%d %H:%M:%S")
-summary$duration_minutes <- as.numeric(duration_mins)
+# Explicitly strip difftime class by unlassing first, then converting to numeric
+# This ensures all S3 class attributes are removed before JSON serialization
+summary$duration_minutes <- as.numeric(unclass(duration_mins))
 
 cli_h1("Workflow Summary")
 cli_alert_info("Duration: {round(duration_mins, 2)} minutes")
