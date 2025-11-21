@@ -1,0 +1,348 @@
+# Getting Started with NHANES Data
+
+## Why NHANES Data Matters (And Why It’s Been Frustrating to Use)
+
+The National Health and Nutrition Examination Survey (NHANES) is one of
+the most comprehensive public health datasets available. With data on
+tens of thousands of Americans spanning over two decades, it’s an
+invaluable resource for understanding trends in health, nutrition,
+disease, and demographics.
+
+If you’ve tried to work with NHANES data before, you’ve likely
+encountered two major pain points:
+
+1.  **CDC server reliability**: The CDC’s data servers can be slow,
+    unresponsive, or down entirely. This makes reproducible research
+    difficult when you can’t count on data availability.  
+2.  **Cycle suffix confusion**: The CDC publishes data in two-year
+    cycles, each with a different letter suffix. Want demographics data?
+    You’ll need to work with `DEMO`, `DEMO_B`, `DEMO_C`, all the way
+    through `DEMO_L`. Finding the right documentation becomes a
+    scavenger hunt, and combining cycles requires careful data
+    wrangling.
+
+The **nhanesdata** package solves both problems:
+
+- **Reliable access**: All datasets are hosted on Cloudflare R2 with a
+  public URL, giving you fast, dependable access anytime.  
+- **Simplified naming**: We’ve already merged all cycles for you. Just
+  ask for `demo` and you get all demographics data from 1999-2021, with
+  a `year` column to track which cycle each observation belongs to.
+
+Let’s get you from zero to your first NHANES analysis in the next 10
+minutes.
+
+## Installation
+
+Install the package from GitHub:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("kyleGrealis/nhanesdata")
+```
+
+Then load the package:
+
+``` r
+library(nhanesdata)
+library(dplyr)    # for data manipulation
+library(ggplot2)  # for visualization
+```
+
+## Your First Dataset in 30 Seconds
+
+Let’s load the demographics dataset, which contains age, gender,
+race/ethnicity, income, and other demographic variables:
+
+``` r
+demo <- read_nhanes('demo')
+
+# Take a look at what we have
+glimpse(demo)
+```
+
+Notice the `year` and `seqn` columns:
+
+- `year`: The survey cycle start year (1999, 2001, 2003, …, 2017,
+  2021)  
+- `seqn`: The respondent sequence number (unique within a cycle, used
+  for joining datasets)
+
+With this one simple call, you now have over 100,000 observations
+spanning 11 survey cycles. No server timeouts, no wrestling with cycle
+suffixes.
+
+## Quick Analysis: Age Distribution Over Time
+
+Let’s examine how the age distribution of NHANES participants has
+evolved:
+
+``` r
+demo %>%
+  filter(!is.na(ridageyr)) %>%
+  ggplot(aes(x = ridageyr)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  facet_wrap(~year, ncol = 4) +
+  labs(
+    title = "NHANES Age Distribution by Survey Cycle",
+    x = "Age (years)",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+In just a few lines, you’ve visualized trends across more than 20 years
+of public health data. That’s the power of simplified access.
+
+## Understanding CDC Dataset Names (Important!)
+
+Here’s where the CDC’s naming system can trip you up. When you use
+`read_nhanes('demo')`, you’re getting data that the CDC publishes across
+multiple tables:
+
+| **CDC Table Name** | **Survey Years** | **What nhanesdata Does**        |
+|--------------------|------------------|---------------------------------|
+| DEMO               | 1999-2000        | Merges all of these into a      |
+| DEMO_B             | 2001-2002        | single dataset called `demo`,   |
+| DEMO_C             | 2003-2004        | adds a `year` column, and       |
+| …                  | …                | harmonizes data types across    |
+| DEMO_L             | 2021-2022        | cycles so you can analyze them  |
+|                    |                  | together without any extra work |
+
+**Why does this matter?**
+
+When you need to look up what a variable means, you’ll still need to
+reference the CDC’s documentation, which uses the cycle-specific names.
+For example, if you’re working with 2015-2016 data, you’ll want the
+`DEMO_I` codebook.
+
+The
+[`get_url()`](https://kyleGrealis.com/nhanesdata/reference/get_url.md)
+function helps with this:
+
+``` r
+# Get documentation for the original DEMO table (1999-2000)
+get_url('DEMO')
+
+# Get documentation for DEMO_I (2015-2016)
+get_url('DEMO_I')
+```
+
+This will return the full URL to the CDC’s documentation page where you
+can find variable descriptions, value codes, and survey methodology
+notes.
+
+## Combining Multiple Datasets
+
+The real power of NHANES comes from linking datasets together. Let’s
+combine demographics with body measures (height, weight, BMI) to look at
+BMI trends:
+
+``` r
+# Load body measures data
+bmx <- read_nhanes('bmx')
+
+# Join with demographics
+bmi_data <- demo %>%
+  select(seqn, year, ridageyr, riagendr) %>%
+  inner_join(
+    bmx %>% select(seqn, year, bmxbmi),
+    by = c("seqn", "year")
+  )
+
+# Analyze BMI trends for adults by gender
+bmi_data %>%
+  filter(
+    ridageyr >= 20,           # adults only
+    !is.na(bmxbmi),           # remove missing BMI
+    !is.na(riagendr)          # remove missing gender
+  ) %>%
+  group_by(year, riagendr) %>%
+  summarize(
+    mean_bmi = mean(bmxbmi, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = year, y = mean_bmi, color = factor(riagendr))) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  scale_color_manual(
+    values = c("1" = "steelblue", "2" = "coral"),
+    labels = c("1" = "Male", "2" = "Female"),
+    name = "Gender"
+  ) +
+  labs(
+    title = "Mean BMI Trends Among U.S. Adults",
+    subtitle = "NHANES 1999-2021",
+    x = "Survey Year",
+    y = "Mean BMI"
+  ) +
+  theme_minimal()
+```
+
+**Key joining principle**: Always join on both `seqn` AND `year`. The
+same person can appear in multiple survey cycles (though this is
+uncommon), and the same sequence number can be reused across cycles.
+
+## Finding Variables: Working Backwards from Your Question
+
+Let’s say you want to study hypertension. You know NHANES collects blood
+pressure data, but which dataset contains it?
+
+### Method 1: Search by Term
+
+Use
+[`term_search()`](https://kyleGrealis.com/nhanesdata/reference/term_search.md)
+to find variables related to a topic:
+
+``` r
+# Find variables related to blood pressure
+bp_vars <- term_search("blood pressure")
+head(bp_vars)
+```
+
+This returns a dataset showing:
+
+- `Variable.Name`: The variable code (e.g., `BPXSY1` for systolic blood
+  pressure)  
+- `Data.File.Name`: Which CDC table it’s in (e.g., `BPX_J`)  
+- `Data.File.Description`: What the table contains  
+- `Begin.Year`: When this data was collected
+
+From this, you can see that blood pressure data lives in the `BPX`
+tables. In nhanesdata, that means you want `read_nhanes('bpx')`.
+
+### Method 2: Search by Variable Name
+
+If you know the specific variable you need, use
+[`var_search()`](https://kyleGrealis.com/nhanesdata/reference/var_search.md):
+
+``` r
+# Find all occurrences of the BPXSY1 variable
+var_search("BPXSY1")
+```
+
+This shows you every cycle where that variable appears, which is helpful
+for understanding data availability over time.
+
+### Method 3: Verify Variables in Your Loaded Data
+
+If you’ve already loaded a dataset and want to confirm it contains the
+variable you need:
+
+``` r
+# Load a dataset
+bmx <- read_nhanes('bmx')
+
+# Check if it contains the height variable
+'bmxht' %in% names(bmx)  # TRUE
+
+# Or see all available columns
+names(bmx)
+```
+
+This approach helps you verify that variables from the CDC documentation
+are actually present in the merged dataset.
+
+## A Complete Example: Blood Pressure by Age Group
+
+Let’s put it all together with a realistic analysis examining how blood
+pressure varies by age:
+
+``` r
+# Load required datasets
+demo <- read_nhanes('demo')
+bpx <- read_nhanes('bpx')
+
+# Combine and analyze
+bp_analysis <- demo %>%
+  filter(ridageyr >= 18) %>%  # adults only
+  select(seqn, year, ridageyr, riagendr, ridreth1) %>%
+  inner_join(
+    bpx %>% select(seqn, year, bpxsy1, bpxdi1),
+    by = c("seqn", "year")
+  ) %>%
+  filter(
+    !is.na(bpxsy1),     # valid systolic BP
+    !is.na(bpxdi1),     # valid diastolic BP
+    bpxsy1 > 0,         # exclude special codes
+    bpxdi1 > 0
+  ) %>%
+  mutate(
+    age_group = cut(
+      ridageyr,
+      breaks = c(18, 30, 40, 50, 60, 70, 80, Inf),
+      labels = c("18-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+      right = FALSE
+    )
+  )
+
+# Calculate mean BP by age group
+bp_summary <- bp_analysis %>%
+  group_by(age_group) %>%
+  summarize(
+    n = n(),
+    mean_systolic = mean(bpxsy1),
+    mean_diastolic = mean(bpxdi1),
+    .groups = "drop"
+  )
+
+# Visualize
+bp_summary %>%
+  ggplot(aes(x = age_group)) +
+  geom_col(aes(y = mean_systolic), fill = "coral", alpha = 0.7) +
+  geom_col(aes(y = mean_diastolic), fill = "steelblue", alpha = 0.7) +
+  labs(
+    title = "Blood Pressure Increases with Age",
+    subtitle = "Mean systolic (coral) and diastolic (blue) BP by age group",
+    x = "Age Group",
+    y = "Blood Pressure (mmHg)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This analysis combines data from over 100,000 individuals across
+multiple survey cycles to reveal the well-known pattern of increasing
+blood pressure with age. You did this without dealing with a single CDC
+server timeout or cycle suffix.
+
+## Summary: What You’ve Learned
+
+In this vignette, you’ve learned how to:
+
+1.  Load NHANES datasets instantly with
+    [`read_nhanes()`](https://kyleGrealis.com/nhanesdata/reference/read_nhanes.md)
+2.  Understand the relationship between CDC cycle-specific tables and
+    nhanesdata’s merged datasets
+3.  Join multiple datasets using `seqn` and `year`
+4.  Find variables using
+    [`term_search()`](https://kyleGrealis.com/nhanesdata/reference/term_search.md)
+    and
+    [`var_search()`](https://kyleGrealis.com/nhanesdata/reference/var_search.md)
+5.  Access CDC documentation with
+    [`get_url()`](https://kyleGrealis.com/nhanesdata/reference/get_url.md)
+6.  Conduct real analyses combining demographic, anthropometric, and
+    examination data
+
+The nhanesdata package removes the traditional friction from working
+with NHANES data. You can now focus on answering your research questions
+instead of fighting with data infrastructure.
+
+## Next Steps
+
+Ready to dive deeper? Here are some ideas for your own analyses:
+
+- Examine trends in diabetes prevalence using the `diq` (diabetes
+  questionnaire) dataset  
+- Analyze changes in dietary patterns with `dr1tot` and `dr2tot`
+  (dietary interview data)  
+- Study relationships between physical activity (`paq`) and health
+  outcomes  
+- Explore prescription medication use patterns with `rxq_rx` data
+
+All of these datasets are available through
+[`read_nhanes()`](https://kyleGrealis.com/nhanesdata/reference/read_nhanes.md).
+Use the search functions to explore what’s available, and don’t hesitate
+to combine multiple datasets to answer complex questions.
+
+The data is waiting for you. Happy analyzing!

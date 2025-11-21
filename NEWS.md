@@ -1,3 +1,15 @@
+# nhanesdata (development version)
+
+## Documentation improvements
+
+* **Enhanced getting-started vignette** with merged content from introduction vignette and new rendered plot examples demonstrating key workflows.
+
+* **Improved README** with rewritten introduction emphasizing problem-solving capabilities and new "Finding Variables" section with practical search examples.
+
+* **Simplified documentation examples** throughout vignettes and README to use base R pipe `|>` for consistency and compatibility.
+
+* **Consistent package name formatting** across all vignette prose with markdown emphasis for clarity.
+
 # nhanesdata 0.1.0
 
 ## Breaking changes

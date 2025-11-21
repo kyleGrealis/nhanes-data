@@ -10,12 +10,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-^IMPLEMENTATION_GUIDE\.md$
+^MAINTAINER\.md$
 ^\.github$
 ^\.checksums\.json$
-^PROJECT_STATUS\.md$
 ^\.claude$
-^SECURITY\.md$
 ^logos$
 ^workflow_summary\.json$
 ^doc$
