@@ -13,7 +13,7 @@ encountered two major pain points:
 
 1.  **CDC server reliability**: The CDC’s data servers can be slow,
     unresponsive, or down entirely. This makes reproducible research
-    difficult when you can’t count on data availability.  
+    difficult when you can’t count on data availability.
 2.  **Cycle suffix confusion**: The CDC publishes data in two-year
     cycles, each with a different letter suffix. Want demographics data?
     You’ll need to work with `DEMO`, `DEMO_B`, `DEMO_C`, all the way
@@ -24,13 +24,25 @@ encountered two major pain points:
 The **nhanesdata** package solves both problems:
 
 - **Reliable access**: All datasets are hosted on Cloudflare R2 with a
-  public URL, giving you fast, dependable access anytime.  
+  public URL, giving you fast, dependable access anytime.
 - **Simplified naming**: We’ve already merged all cycles for you. Just
   ask for `demo` and you get all demographics data from 1999-2021, with
   a `year` column to track which cycle each observation belongs to.
 
 Let’s get you from zero to your first NHANES analysis in the next 10
 minutes.
+
+## Acknowledgments
+
+This package builds on the excellent **nhanesA** package, which provides
+the foundation for accessing NHANES data through R. We’re grateful for
+the **nhanesA** developers’ work in making CDC data accessible.
+
+The **nhanesdata** package extends **nhanesA** by providing:
+
+- Pre-processed datasets for fast access
+- Automatic harmonization across survey cycles (1999-2021)
+- Convenient search and discovery functions
 
 ## Installation
 
@@ -54,6 +66,9 @@ library(ggplot2)  # for visualization
 Let’s load the demographics dataset, which contains age, gender,
 race/ethnicity, income, and other demographic variables:
 
+    #> Loading: DEMO
+    #> DEMO complete! (113,249 rows)
+
 ``` r
 demo <- read_nhanes('demo')
 
@@ -63,8 +78,7 @@ glimpse(demo)
 
 Notice the `year` and `seqn` columns:
 
-- `year`: The survey cycle start year (1999, 2001, 2003, …, 2017,
-  2021)  
+- `year`: The survey cycle start year (1999, 2001, 2003, …, 2017, 2021)
 - `seqn`: The respondent sequence number (unique within a cycle, used
   for joining datasets)
 
@@ -72,14 +86,17 @@ With this one simple call, you now have over 100,000 observations
 spanning 11 survey cycles. No server timeouts, no wrestling with cycle
 suffixes.
 
+**Note:** Dataset names are case-insensitive - use `'demo'`, `'DEMO'`,
+or `'Demo'` interchangeably!
+
 ## Quick Analysis: Age Distribution Over Time
 
 Let’s examine how the age distribution of NHANES participants has
 evolved:
 
 ``` r
-demo %>%
-  filter(!is.na(ridageyr)) %>%
+demo |>
+  filter(!is.na(ridageyr)) |>
   ggplot(aes(x = ridageyr)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
   facet_wrap(~year, ncol = 4) +
@@ -90,6 +107,8 @@ demo %>%
   ) +
   theme_minimal()
 ```
+
+![](getting-started_files/figure-html/age-analysis-1.png)
 
 In just a few lines, you’ve visualized trends across more than 20 years
 of public health data. That’s the power of simplified access.
@@ -132,56 +151,81 @@ This will return the full URL to the CDC’s documentation page where you
 can find variable descriptions, value codes, and survey methodology
 notes.
 
-## Combining Multiple Datasets
+### Important: 2019-2020 Survey Cycle
 
-The real power of NHANES comes from linking datasets together. Let’s
-combine demographics with body measures (height, weight, BMI) to look at
-BMI trends:
+The 2019-2020 survey cycle (suffix K) is **not included** in the
+datasets provided by this package.
+
+The COVID-19 pandemic disrupted data collection during this cycle, and
+the CDC determined that the data quality was insufficient for standard
+NHANES analysis. The CDC combined partial 2019-2020 data with 2021-2023
+data and released it as a special pre-pandemic dataset.
+
+**Reference:** [CDC NHANES 2019-2020 Data
+Documentation](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2019)
+
+**What this means:** Datasets jump from suffix J (2017-2018) to suffix L
+(2021-2023), skipping K entirely.
+
+## Working with Multiple Datasets
+
+A common workflow is to load and join multiple related datasets. NHANES
+data becomes powerful when you combine information from different
+examinations and questionnaires.
 
 ``` r
-# Load body measures data
-bmx <- read_nhanes('bmx')
+# Load three related datasets
+# Dataset names are case-insensitive - use whichever style you prefer
+demo <- read_nhanes('demo')        # Demographics (age, gender, etc.)
+bpx <- read_nhanes('BPX')          # Blood pressure measurements
+bmx <- read_nhanes('Bmx')          # Body measurements (height, weight, BMI)
 
-# Join with demographics
-bmi_data <- demo %>%
-  select(seqn, year, ridageyr, riagendr) %>%
-  inner_join(
-    bmx %>% select(seqn, year, bmxbmi),
-    by = c("seqn", "year")
-  )
+# Combine the datasets using inner_join()
+# inner_join() keeps only participants who appear in ALL datasets
+# We join by 'seqn' (participant ID) and 'year' (survey cycle)
+analysis_data <- demo |>
+  inner_join(bpx, by = c('seqn', 'year')) |>
+  inner_join(bmx, by = c('seqn', 'year')) |>
+  select(year, seqn, ridageyr, riagendr, bpxsy1, bmxbmi)
 
-# Analyze BMI trends for adults by gender
-bmi_data %>%
-  filter(
-    ridageyr >= 20,           # adults only
-    !is.na(bmxbmi),           # remove missing BMI
-    !is.na(riagendr)          # remove missing gender
-  ) %>%
-  group_by(year, riagendr) %>%
-  summarize(
-    mean_bmi = mean(bmxbmi, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(x = year, y = mean_bmi, color = factor(riagendr))) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 3) +
-  scale_color_manual(
-    values = c("1" = "steelblue", "2" = "coral"),
-    labels = c("1" = "Male", "2" = "Female"),
-    name = "Gender"
-  ) +
-  labs(
-    title = "Mean BMI Trends Among U.S. Adults",
-    subtitle = "NHANES 1999-2021",
-    x = "Survey Year",
-    y = "Mean BMI"
-  ) +
-  theme_minimal()
+# View the first few rows
+head(analysis_data)
 ```
 
-**Key joining principle**: Always join on both `seqn` AND `year`. The
-same person can appear in multiple survey cycles (though this is
-uncommon), and the same sequence number can be reused across cycles.
+**Important joining principles:**
+
+- Always join on BOTH `seqn` AND `year` together
+- The `seqn` column is the participant ID (unique within a cycle)
+- The `year` column ensures you only join observations from the same
+  survey cycle
+- The same `seqn` value can appear in different years if someone
+  participated multiple times
+
+## Filtering by Survey Year
+
+Since datasets include all cycles, you can filter to specific time
+periods:
+
+``` r
+# Load demographics
+demo <- read_nhanes('demo')
+
+# Filter to recent cycles only (2015 and later)
+recent_demo <- demo |>
+  filter(year >= 2015)
+
+# Compare across time periods
+demo |>
+  mutate(
+    period = case_when(
+      year < 2010 ~ '1999-2009',
+      year < 2020 ~ '2010-2019',
+      TRUE ~ '2020+'
+    )
+  ) |>
+  group_by(period) |>
+  summarise(n_participants = n())
+```
 
 ## Finding Variables: Working Backwards from Your Question
 
@@ -203,13 +247,15 @@ head(bp_vars)
 This returns a dataset showing:
 
 - `Variable.Name`: The variable code (e.g., `BPXSY1` for systolic blood
-  pressure)  
-- `Data.File.Name`: Which CDC table it’s in (e.g., `BPX_J`)  
-- `Data.File.Description`: What the table contains  
+  pressure)
+- `Data.File.Name`: Which CDC table it’s in (e.g., `BPX_J`)
+- `Data.File.Description`: What the table contains
 - `Begin.Year`: When this data was collected
 
 From this, you can see that blood pressure data lives in the `BPX`
-tables. In nhanesdata, that means you want `read_nhanes('bpx')`.
+tables. In **nhanesdata**, that means you want `read_nhanes('bpx')`.
+
+**Note:** All search functions are case-insensitive!
 
 ### Method 2: Search by Variable Name
 
@@ -246,27 +292,37 @@ are actually present in the merged dataset.
 ## A Complete Example: Blood Pressure by Age Group
 
 Let’s put it all together with a realistic analysis examining how blood
-pressure varies by age:
+pressure varies by age. This example will include one rendered plot
+showing the results:
 
 ``` r
-# Load required datasets
+# Step 1: Load required datasets
 demo <- read_nhanes('demo')
 bpx <- read_nhanes('bpx')
 
-# Combine and analyze
-bp_analysis <- demo %>%
-  filter(ridageyr >= 18) %>%  # adults only
-  select(seqn, year, ridageyr, riagendr, ridreth1) %>%
-  inner_join(
-    bpx %>% select(seqn, year, bpxsy1, bpxdi1),
-    by = c("seqn", "year")
-  ) %>%
+# Step 2: Select demographic variables for adults
+demo_adults <- demo |>
+  filter(ridageyr >= 18) |>  # adults only
+  select(seqn, year, ridageyr, riagendr, ridreth1)
+
+# Step 3: Select blood pressure variables
+bp_vars <- bpx |>
+  select(seqn, year, bpxsy1, bpxdi1)
+
+# Step 4: Combine the datasets using inner_join()
+# inner_join() matches rows that appear in BOTH datasets
+# We join by 'seqn' (participant ID) and 'year' (survey cycle)
+bp_combined <- demo_adults |>
+  inner_join(bp_vars, by = c("seqn", "year"))
+
+# Step 5: Filter to valid blood pressure readings and create age groups
+bp_analysis <- bp_combined |>
   filter(
     !is.na(bpxsy1),     # valid systolic BP
     !is.na(bpxdi1),     # valid diastolic BP
     bpxsy1 > 0,         # exclude special codes
     bpxdi1 > 0
-  ) %>%
+  ) |>
   mutate(
     age_group = cut(
       ridageyr,
@@ -276,18 +332,22 @@ bp_analysis <- demo %>%
     )
   )
 
-# Calculate mean BP by age group
-bp_summary <- bp_analysis %>%
-  group_by(age_group) %>%
+# Step 6: Calculate mean BP by age group
+# group_by() creates groups for each age category
+# summarize() calculates summary statistics within each group
+bp_summary <- bp_analysis |>
+  group_by(age_group) |>
   summarize(
     n = n(),
     mean_systolic = mean(bpxsy1),
     mean_diastolic = mean(bpxdi1),
     .groups = "drop"
   )
+```
 
-# Visualize
-bp_summary %>%
+``` r
+# Step 7: Visualize the results
+bp_summary |>
   ggplot(aes(x = age_group)) +
   geom_col(aes(y = mean_systolic), fill = "coral", alpha = 0.7) +
   geom_col(aes(y = mean_diastolic), fill = "steelblue", alpha = 0.7) +
@@ -301,6 +361,8 @@ bp_summary %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+![](getting-started_files/figure-html/complete-example-plot-1.png)
+
 This analysis combines data from over 100,000 individuals across
 multiple survey cycles to reveal the well-known pattern of increasing
 blood pressure with age. You did this without dealing with a single CDC
@@ -313,18 +375,20 @@ In this vignette, you’ve learned how to:
 1.  Load NHANES datasets instantly with
     [`read_nhanes()`](https://kyleGrealis.com/nhanesdata/reference/read_nhanes.md)
 2.  Understand the relationship between CDC cycle-specific tables and
-    nhanesdata’s merged datasets
+    **nhanesdata**’s merged datasets
 3.  Join multiple datasets using `seqn` and `year`
-4.  Find variables using
+4.  Filter data by survey year to analyze specific time periods
+5.  Work with multiple datasets simultaneously
+6.  Find variables using
     [`term_search()`](https://kyleGrealis.com/nhanesdata/reference/term_search.md)
     and
     [`var_search()`](https://kyleGrealis.com/nhanesdata/reference/var_search.md)
-5.  Access CDC documentation with
+7.  Access CDC documentation with
     [`get_url()`](https://kyleGrealis.com/nhanesdata/reference/get_url.md)
-6.  Conduct real analyses combining demographic, anthropometric, and
+8.  Conduct real analyses combining demographic, anthropometric, and
     examination data
 
-The nhanesdata package removes the traditional friction from working
+The **nhanesdata** package removes the traditional friction from working
 with NHANES data. You can now focus on answering your research questions
 instead of fighting with data infrastructure.
 
@@ -333,11 +397,11 @@ instead of fighting with data infrastructure.
 Ready to dive deeper? Here are some ideas for your own analyses:
 
 - Examine trends in diabetes prevalence using the `diq` (diabetes
-  questionnaire) dataset  
+  questionnaire) dataset
 - Analyze changes in dietary patterns with `dr1tot` and `dr2tot`
-  (dietary interview data)  
+  (dietary interview data)
 - Study relationships between physical activity (`paq`) and health
-  outcomes  
+  outcomes
 - Explore prescription medication use patterns with `rxq_rx` data
 
 All of these datasets are available through

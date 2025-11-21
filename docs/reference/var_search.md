@@ -44,6 +44,7 @@ Other search and lookup functions:
 ## Examples
 
 ``` r
+# \donttest{
 # Search for specific variable (case-insensitive)
 var_search("RIAGENDR")  # Gender variable
 #>  [1] "BFRPOL_D" "BFRPOL_E" "BFRPOL_F" "BFRPOL_G" "BFRPOL_H" "BFRPOL_I"
@@ -61,4 +62,5 @@ var_search("ridageyr")  # Age variable (auto-converted to uppercase)
 var_search("LBXGLU")
 #>  [1] "GLU_D"   "GLU_E"   "GLU_F"   "GLU_G"   "GLU_H"   "GLU_I"   "GLU_J"  
 #>  [8] "GLU_L"   "L10AM_B" "L10AM_C" "LAB10AM" "P_GLU"  
+# }
 ```

@@ -17,7 +17,9 @@
 ^logos$
 ^workflow_summary\.json$
 ^doc$
+^docs$
 ^Meta$
 ^_pkgdown\.yml$
 ^pkgdown$
 ^.*\.Rcheck$
+^vignettes/\.quarto$

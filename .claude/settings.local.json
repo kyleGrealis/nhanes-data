@@ -23,7 +23,8 @@
       "Bash(R CMD build:*)",
       "WebFetch(domain:orcid.org)",
       "WebFetch(domain:www.cdc.gov)",
-      "WebFetch(domain:wwwn.cdc.gov)"
+      "WebFetch(domain:wwwn.cdc.gov)",
+      "Bash(R -e \"roxygen2::roxygenise()\":*)"
     ],
     "deny": [],
     "ask": []

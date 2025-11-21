@@ -19,7 +19,6 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with NHANES Data</a></li>
-    <li><a class="dropdown-item" href="../articles/introduction.html">Introduction to nhanesdata</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -38,56 +37,28 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0" id="nhanesdata-010">nhanesdata 0.1.0<a class="anchor" aria-label="anchor" href="#nhanesdata-010"></a></h2>
+<h2 class="pkg-version" data-toc-text="development version" id="nhanesdata-development-version">nhanesdata (development version)<a class="anchor" aria-label="anchor" href="#nhanesdata-development-version"></a></h2>
+<ul><li>Improved vignettes and README with clearer examples and better documentation.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0" id="nhanesdata-010-2025-11-20">nhanesdata 0.1.0 (2025-11-20)<a class="anchor" aria-label="anchor" href="#nhanesdata-010-2025-11-20"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-1-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-1-0"></a></h3>
-<ul><li>
-<p><strong>RENAMED</strong> <code>read_r2()</code> to <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code>. The new name better reflects the function’s purpose (reading NHANES data) rather than the implementation detail (R2 cloud storage). Update your code:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Old (no longer works):</span></span>
-<span><span class="va">demo</span> <span class="op">&lt;-</span> <span class="fu">read_r2</span><span class="op">(</span><span class="st">'demo'</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># New:</span></span>
-<span><span class="va">demo</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_nhanes.html">read_nhanes</a></span><span class="op">(</span><span class="st">'demo'</span><span class="op">)</span></span></code></pre></div>
-</li>
-<li><p><strong>REMOVED</strong> <code>pull_nhanes()</code> from exported functions. This function is now internal-only for package maintainers running data update workflows. End users should use <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code> to load pre-processed data from cloud storage.</p></li>
-<li><p><strong>REMOVED</strong> internal workflow helper functions (<code>detect_data_changes()</code>, <code>update_checksum()</code>, <code>load_dataset_config()</code>). These functions had exactly one call site each in the workflow script and have been inlined directly into <code>inst/scripts/workflow_update.R</code> for simplicity. This change is transparent to end users and only affects package maintainers.</p></li>
-<li><p><strong>REMOVED</strong> dependency on <code><a href="https://rdrr.io/pkg/nhanesA/man/nhanesManifest.html" class="external-link">nhanesA::nhanesManifest()</a></code> in <code><a href="../reference/get_url.html">get_url()</a></code>. The function now constructs URLs directly using internal suffix-to-year mapping. This change should be transparent to users but may affect behavior for edge cases with unusual table suffixes.</p></li>
+<ul><li><p><code>read_r2()</code> renamed to <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code> to better reflect the function’s purpose.</p></li>
+<li><p><code>pull_nhanes()</code> no longer exported; end users should use <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code> to load data.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="improvements-0-1-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-1-0"></a></h3>
-<ul><li><p><strong>Lighter dependency footprint</strong>: Moved 7 packages from Imports to Suggests (janitor, fs, pins, jsonlite, yaml, tools, cli). These are only needed for internal maintainer functions. End users installing the package get fewer required dependencies.</p></li>
-<li><p><strong>Enhanced documentation</strong>: All user-facing functions now explicitly document that dataset names are <strong>case-insensitive</strong>. Use ‘demo’, ‘DEMO’, or ‘Demo’ interchangeably.</p></li>
-<li><p><strong>Added acknowledgments</strong>: README and vignettes now acknowledge the excellent <a href="https://cran.r-project.org/package=nhanesA" class="external-link">nhanesA</a> package developers, whose work provides the foundation for CDC data access.</p></li>
-<li><p><strong>COVID-19 cycle documentation</strong>: Added clear explanation in README and vignettes about why the 2019-2020 survey cycle (suffix K) is excluded, with reference to CDC documentation.</p></li>
-<li><p><strong>Simplified workflow architecture</strong>: Inlined three single-use helper functions directly into the workflow script, reducing code from 225 lines of abstraction (functions + docs + tests) to ~40 lines of direct inline logic. This makes the workflow easier to understand and maintain.</p></li>
-<li>
-<p>Complete rewrite of <code><a href="../reference/get_url.html">get_url()</a></code> for better reliability and performance:</p>
-<ul><li>Uses internal suffix-to-year mapping instead of external manifest lookup</li>
-<li>Adds comprehensive documentation with usage examples</li>
-<li>Now returns URL invisibly for programmatic use while still printing</li>
-<li>Better error handling for unrecognized table suffixes</li>
-<li>Supports case-insensitive input and tables with or without suffixes</li>
-</ul></li>
-<li>
-<p>New internal utility functions in <code>R/utils.R</code>:</p>
-<ul><li>
-<code>.get_year_from_suffix()</code> maps NHANES table suffixes to survey cycle years</li>
-<li>
-<code><a href="https://rdrr.io/r/utils/globalVariables.html" class="external-link">globalVariables()</a></code> declaration eliminates R CMD check NOTEs</li>
-</ul></li>
-<li><p>Added dependency guards to all internal functions that use Suggests packages, with clear error messages and installation instructions</p></li>
-<li><p><strong>Comprehensive error handling</strong>: <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code> now validates all inputs and provides clear, helpful error messages. Search functions (<code><a href="../reference/term_search.html">term_search()</a></code> and <code><a href="../reference/var_search.html">var_search()</a></code>) gracefully handle API failures instead of crashing.</p></li>
-<li><p><strong>Test suite expansion</strong>: Added 200+ comprehensive tests covering core package functionality with proper test infrastructure and setup files. Tests focus on package logic rather than external API behavior.</p></li>
-<li><p><strong>Documentation cleanup</strong>: Fixed roxygen2 documentation for all functions, cleaned NAMESPACE of orphaned imports, fixed markdown formatting in README and vignettes, and added pkgdown configuration for improved documentation site.</p></li>
-<li><p><strong>API simplification</strong>: Removed unnecessary <code>type</code> parameter from <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code> since only parquet format is supported, resulting in simpler function signatures.</p></li>
+<ul><li><p>Reduced required dependencies—moved 7 packages to Suggests (janitor, fs, pins, jsonlite, yaml, tools, cli).</p></li>
+<li><p>Dataset names are now case-insensitive; use ‘demo’, ‘DEMO’, or ‘Demo’ interchangeably.</p></li>
+<li><p>Improved error messages for clearer debugging and better user experience.</p></li>
+<li><p><code><a href="../reference/get_url.html">get_url()</a></code> rewritten for better reliability and performance.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-1-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-0"></a></h3>
-<ul><li><p>Fixed critical bug in <code>pull_nhanes()</code> where the <code><a href="https://rdrr.io/r/base/save.html" class="external-link">save()</a></code> function was failing with “object not found” error. Added <code><a href="https://rdrr.io/r/base/assign.html" class="external-link">assign()</a></code> to properly create the named object before saving to .rda format.</p></li>
-<li><p>Fixed NULL handling in <code><a href="../reference/term_search.html">term_search()</a></code> and <code><a href="../reference/var_search.html">var_search()</a></code> to prevent crashes when API responses contain unexpected null values.</p></li>
-<li><p>Fixed type coercion issue where Begin.Year column was not being properly converted to numeric format in <code><a href="../reference/read_nhanes.html">read_nhanes()</a></code>.</p></li>
-<li><p>Fixed case-insensitive behavior to work consistently across all functions when handling dataset and table names.</p></li>
+<ul><li><p>Fixed critical bug in <code>pull_nhanes()</code> where <code><a href="https://rdrr.io/r/base/save.html" class="external-link">save()</a></code> was failing with “object not found” error.</p></li>
+<li><p>Fixed NULL handling in <code><a href="../reference/term_search.html">term_search()</a></code> and <code><a href="../reference/var_search.html">var_search()</a></code> to prevent crashes on unexpected API responses.</p></li>
+<li><p>Fixed type coercion where Begin.Year column was not being properly converted to numeric format.</p></li>
 </ul></div>
 </div>
     <div class="section level2">

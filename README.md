@@ -151,7 +151,9 @@ The CDC releases NHANES data in 2-year cycles, with each cycle getting a **lette
 | `DEMO_J` | 2017-2018 | J |
 | `DEMO_L` | 2021-2022 | L (skips K) |
 
-This pattern applies to **all 66 datasets**: `BPX`, `BPX_B`, `BPX_C`, ..., `BPX_L` for blood pressure examination data, and so on.
+This pattern applies to **all NHANES datasets**: `BPX`, `BPX_B`, `BPX_C`, ..., `BPX_L` for blood pressure examination data, and so on.
+
+> Do note that there are mild inconsistencies in the suffix naming convention, particularly with COVID-era data.
 
 ### How This Package Names Datasets
 
@@ -343,7 +345,7 @@ This direct access is useful for:
 
 ## Related Packages
 
-- **[nhanesA](https://cran.r-project.org/package=nhanesA)**: Direct interface to NHANES API (this package wraps it for multi-cycle harmonization)  
+- **[nhanesA](https://cran.r-project.org/package=nhanesA)**: Direct interface to NHANES API  
 - **[survey](https://cran.r-project.org/package=survey)**: Complex survey analysis with proper weighting  
 - **[srvyr](https://cran.r-project.org/package=srvyr)**: Tidy survey analysis using **dplyr** syntax  
 - **[gtsummary](https://cran.r-project.org/package=gtsummary)**: Publication-ready summary tables  

@@ -25,7 +25,6 @@ then by variable name."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with NHANES Data</a></li>
-    <li><a class="dropdown-item" href="../articles/introduction.html">Introduction to nhanesdata</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -87,7 +86,8 @@ Returns an empty data.frame with correct structure if no matches found.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Search for diabetes-related variables</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># Search for diabetes-related variables</span></span></span>
 <span class="r-in"><span><span class="fu">term_search</span><span class="op">(</span><span class="st">"diabetes"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Variable.Name</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1          DID040</span>
@@ -5251,6 +5251,7 @@ Returns an empty data.frame with correct structure if no matches found.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] Variable.Name        Variable.Description Data.File.Name      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [4] Begin.Year          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;0 rows&gt; (or 0-length row.names)</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

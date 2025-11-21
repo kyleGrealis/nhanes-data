@@ -51,6 +51,7 @@ Other search and lookup functions:
 ## Examples
 
 ``` r
+# \donttest{
 # Search for diabetes-related variables
 term_search("diabetes")
 #>     Variable.Name
@@ -5215,4 +5216,5 @@ term_search("weight (kg)")
 #> [1] Variable.Name        Variable.Description Data.File.Name      
 #> [4] Begin.Year          
 #> <0 rows> (or 0-length row.names)
+# }
 ```

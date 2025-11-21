@@ -84,6 +84,7 @@ get_url <- function(table) {
 #'   Returns an empty data.frame with correct structure if no matches found.
 #'
 #' @examples
+#' \donttest{
 #' # Search for diabetes-related variables
 #' term_search("diabetes")
 #'
@@ -95,6 +96,7 @@ get_url <- function(table) {
 #'
 #' # Handles special characters safely
 #' term_search("weight (kg)")
+#' }
 #'
 #' @family search and lookup functions
 #' @seealso \code{\link{var_search}} for searching by exact variable name,
@@ -201,12 +203,14 @@ term_search <- function(var) {
 #'   if the variable is not found.
 #'
 #' @examples
+#' \donttest{
 #' # Search for specific variable (case-insensitive)
 #' var_search("RIAGENDR")  # Gender variable
 #' var_search("ridageyr")  # Age variable (auto-converted to uppercase)
 #'
 #' # See where glucose variables appear
 #' var_search("LBXGLU")
+#' }
 #'
 #' @family search and lookup functions
 #' @seealso \code{\link{term_search}} for text-based searches,

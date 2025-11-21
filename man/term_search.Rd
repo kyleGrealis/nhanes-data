@@ -29,6 +29,7 @@ and survey years. Results are sorted by year (most recent first) and
 then by variable name.
 }
 \examples{
+\donttest{
 # Search for diabetes-related variables
 term_search("diabetes")
 
@@ -40,6 +41,7 @@ term_search("age")
 
 # Handles special characters safely
 term_search("weight (kg)")
+}
 
 }
 \seealso{

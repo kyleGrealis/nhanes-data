@@ -13,8 +13,8 @@ vignette: >
 
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  eval = FALSE
+  eval = FALSE,  # Default: don't evaluate most chunks
+  comment = "#>"
 )
 ```
 
@@ -60,8 +60,9 @@ Then load the package:
 
 ```{r}
 #| label: load-packages
-#| eval: false
+#| eval: true
 #| message: false
+#| warning: false
 
 library(nhanesdata)
 library(dplyr)    # for data manipulation
@@ -74,6 +75,14 @@ Let's load the demographics dataset, which contains age, gender, race/ethnicity,
 
 ```{r}
 #| label: load-demo
+#| eval: true
+#| echo: false
+
+demo <- read_nhanes('demo')
+```
+
+```{r}
+#| label: load-demo-fake
 #| eval: false
 
 demo <- read_nhanes('demo')
@@ -97,7 +106,9 @@ Let's examine how the age distribution of NHANES participants has evolved:
 
 ```{r}
 #| label: age-analysis
-#| eval: false
+#| eval: true
+#| fig.width: 8
+#| fig.height: 6
 
 demo |>
   filter(!is.na(ridageyr)) |>
@@ -155,64 +166,6 @@ The COVID-19 pandemic disrupted data collection during this cycle, and the CDC d
 **Reference:** [CDC NHANES 2019-2020 Data Documentation](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2019)
 
 **What this means:** Datasets jump from suffix J (2017-2018) to suffix L (2021-2023), skipping K entirely.
-
-## Combining Multiple Datasets
-
-The real power of NHANES comes from linking datasets together. Let's combine demographics with body measures (height, weight, BMI) to look at BMI trends:
-
-```{r}
-#| label: bmi-analysis
-#| eval: false
-
-# Load body measures data
-bmx <- read_nhanes('bmx')
-
-# Join with demographics
-bmi_data <- demo |>
-  select(seqn, year, ridageyr, riagendr) |>
-  inner_join(
-    bmx |> select(seqn, year, bmxbmi),
-    by = c("seqn", "year")
-  )
-
-# Filter to adults with valid BMI and gender data
-adults_bmi <- bmi_data |>
-  filter(
-    ridageyr >= 20,           # adults only
-    !is.na(bmxbmi),           # remove missing BMI
-    !is.na(riagendr)          # remove missing gender
-  )
-
-# Calculate mean BMI for each year and gender combination
-# group_by() groups data by year and gender
-# summarize() calculates statistics for each group
-bmi_summary <- adults_bmi |>
-  group_by(year, riagendr) |>
-  summarize(
-    mean_bmi = mean(bmxbmi, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# Visualize the trends
-bmi_summary |>
-  ggplot(aes(x = year, y = mean_bmi, color = factor(riagendr))) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 3) +
-  scale_color_manual(
-    values = c("1" = "steelblue", "2" = "coral"),
-    labels = c("1" = "Male", "2" = "Female"),
-    name = "Gender"
-  ) +
-  labs(
-    title = "Mean BMI Trends Among U.S. Adults",
-    subtitle = "NHANES 1999-2021",
-    x = "Survey Year",
-    y = "Mean BMI"
-  ) +
-  theme_minimal()
-```
-
-**Key joining principle**: Always join on both `seqn` AND `year`. The same person can appear in multiple survey cycles (though this is uncommon), and the same sequence number can be reused across cycles.
 
 ## Working with Multiple Datasets
 
@@ -342,6 +295,33 @@ This approach helps you verify that variables from the CDC documentation are act
 Let's put it all together with a realistic analysis examining how blood pressure varies by age. This example will include one rendered plot showing the results:
 
 ```{r}
+#| label: bp-plot-setup
+#| include: false
+#| eval: true
+#| message: false
+#| warning: false
+
+# Hidden setup: load data and prepare for the blood pressure plot
+bpx <- read_nhanes('bpx')
+bp_combined <- demo |>
+  filter(ridageyr >= 18) |>
+  select(seqn, year, ridageyr, riagendr, ridreth1) |>
+  inner_join(
+    bpx |> select(seqn, year, bpxsy1, bpxdi1),
+    by = c("seqn", "year")
+  )
+bp_summary <- bp_combined |>
+  filter(!is.na(bpxsy1), !is.na(bpxdi1), bpxsy1 > 0, bpxdi1 > 0) |>
+  mutate(
+    age_group = cut(ridageyr, breaks = c(18, 30, 40, 50, 60, 70, 80, Inf),
+                    labels = c("18-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+                    right = FALSE)
+  ) |>
+  group_by(age_group) |>
+  summarize(n = n(), mean_systolic = mean(bpxsy1), mean_diastolic = mean(bpxdi1), .groups = "drop")
+```
+
+```{r}
 #| label: complete-example-load
 #| eval: false
 #| message: false
@@ -399,8 +379,8 @@ bp_summary <- bp_analysis |>
 #| label: complete-example-plot
 #| eval: true
 #| echo: true
-#| warning: false
-#| message: false
+#| fig.width: 7
+#| fig.height: 5
 
 # Step 7: Visualize the results
 bp_summary |>

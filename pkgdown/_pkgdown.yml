@@ -16,7 +16,6 @@ articles:
     navbar: ~
     contents:
       - getting-started
-      - introduction
 
 reference:
   - title: "Data Loading"
@@ -52,8 +51,6 @@ navbar:
       menu:
       - text: Getting Started with NHANES Data
         href: articles/getting-started.html
-      - text: Introduction to nhanesdata
-        href: articles/introduction.html
     news:
       text: Changelog
       href: news/index.html

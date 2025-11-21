@@ -8,15 +8,14 @@ Authors@R:
         role = c("aut", "cre"),
         comment = c(ORCID = "0000-0002-9223-8854")
     )
-Description: A set of tools to download, process, and store data from the
-    National Health and Nutrition Examination Survey (NHANES). It provides
-    wrapper functions to the 'nhanesA' package to download data across
-    multiple survey cycles and helper functions to read data from a public
-    data store.
+Description: Instant access to harmonized National Health and Nutrition Examination Survey (NHANES) data spanning 1999-2023. Retrieve pre-processed datasets from reliable cloud storage with automatic type reconciliation and integrated search tools for variables and datasets. Simplifies NHANES data workflows by handling cycle management and maintaining data consistency across survey waves.
 License: MIT + file LICENSE
+URL: https://kyleGrealis.com/nhanesdata
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1.0)
 Imports:
     nhanesA,
     dplyr,
